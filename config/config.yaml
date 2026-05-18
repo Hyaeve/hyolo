@@ -1,0 +1,48 @@
+app:
+  name: Herbal Vision
+  host: 0.0.0.0
+  port: 8000
+  debug: false
+
+model:
+  path: ./models/best.pt
+  device: cpu
+  conf: 0.25
+  iou: 0.45
+  imgsz: 512
+  allow_upload: false
+  allow_unsafe_serialized_uploads: false
+
+runtime:
+  cpu_threads: 2
+  max_upload_size_mb: 256
+  max_batch_files: 10
+  save_result: true
+
+camera:
+  default_fps_limit: 6
+  reconnect_interval: 5
+  read_timeout: 10
+
+ai:
+  base_url: ""
+  api_key: ""
+  model: ""
+  timeout_seconds: 30
+
+auth:
+  default_username: admin
+  default_password: ""
+  session_ttl_minutes: 1440
+  auth_file: ./config/auth.json
+  cookie_name: hv_session
+  min_password_length: 8
+  max_login_failures: 5
+  lockout_minutes: 15
+
+path:
+  upload_dir: ./uploads
+  output_dir: ./outputs
+  watch_dir: ./watch
+  log_dir: ./logs
+  frontend_dir: ./frontend

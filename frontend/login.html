@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+    <title>登录 - YOLO Herbal Vision</title>
+    <style>
+      :root {
+        --bg: #eef4f8;
+        --panel: rgba(255,255,255,.92);
+        --text: #293744;
+        --muted: #7c8794;
+        --primary: #1f9d73;
+        --teal: #34a4b5;
+        --danger: #e05656;
+        --shadow: 0 22px 54px rgba(56, 82, 110, 0.12);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background:
+          radial-gradient(circle at top left, rgba(174, 214, 227, 0.34), transparent 26%),
+          radial-gradient(circle at top right, rgba(250, 214, 196, 0.25), transparent 22%),
+          var(--bg);
+        color: var(--text);
+      }
+      .login-shell {
+        width: min(480px, 100%);
+        background: var(--panel);
+        border-radius: 32px;
+        padding: 28px;
+        box-shadow: var(--shadow);
+        border: 1px solid rgba(255,255,255,.9);
+      }
+      .logo-wrap {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 12px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(248,250,252,0.98), rgba(255,255,255,0.92));
+      }
+      .logo-wrap img { width: 100%; max-width: 220px; }
+      h1 { margin: 22px 0 10px; font-size: 30px; }
+      p { margin: 0 0 20px; color: var(--muted); line-height: 1.8; }
+      .field { margin-bottom: 14px; }
+      .field label { display: block; margin-bottom: 8px; font-size: 14px; color: var(--muted); }
+      .field input {
+        width: 100%;
+        min-height: 50px;
+        border-radius: 16px;
+        border: 1px solid rgba(166, 190, 205, 0.72);
+        padding: 12px 14px;
+        font: inherit;
+      }
+      button {
+        width: 100%;
+        min-height: 50px;
+        border: none;
+        border-radius: 16px;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--teal), var(--primary));
+      }
+      .status { margin-top: 14px; line-height: 1.7; color: var(--muted); }
+      .status.error { color: var(--danger); }
+      .hint { margin-top: 14px; font-size: 13px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main class="login-shell">
+      <div class="logo-wrap">
+        <img src="/assets/logo.svg" alt="YOLO Logo" />
+      </div>
+      <h1>登录 YOLO Herbal Vision</h1>
+      <p>首次启动时，如未显式配置初始密码，系统会在后端启动日志中生成一次性初始密码。首次登录后必须立即修改账户密码。</p>
+      <form id="login-form">
+        <div class="field">
+          <label for="username">账户</label>
+          <input id="username" name="username" type="text" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label for="password">密码</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+        <button id="login-btn" type="submit">登录进入系统</button>
+      </form>
+      <div id="login-status" class="status">请输入账户密码以进入 Web 控制台。</div>
+      <div class="hint">账号密码修改后将持久化到 [`config/auth.json`](config/auth.json)</div>
+    </main>
+
+    <script>
+      const form = document.getElementById('login-form');
+      const button = document.getElementById('login-btn');
+      const statusNode = document.getElementById('login-status');
+
+      async function checkAuth() {
+        const response = await fetch('/api/auth/status');
+        const payload = await response.json();
+        if (payload.authenticated) {
+          window.location.href = '/';
+        }
+      }
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        button.disabled = true;
+        statusNode.textContent = '登录中，请稍候...';
+        statusNode.className = 'status';
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: document.getElementById('username').value.trim(),
+              password: document.getElementById('password').value,
+            }),
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.detail || '登录失败');
+          }
+          statusNode.textContent = '登录成功，正在进入系统...';
+          window.location.href = '/';
+        } catch (error) {
+          statusNode.textContent = error.message;
+          statusNode.className = 'status error';
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      checkAuth();
+    </script>
+  </body>
+</html>

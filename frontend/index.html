@@ -1,0 +1,2475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+    <title>YOLO Herbal Vision 控制台</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #eef4f8;
+        --panel: rgba(255, 255, 255, 0.84);
+        --panel-strong: rgba(255, 255, 255, 0.94);
+        --line: rgba(182, 201, 218, 0.58);
+        --text: #283542;
+        --muted: #7b8795;
+        --primary: #1f9d73;
+        --primary-dark: #157754;
+        --teal: #34a4b5;
+        --teal-soft: rgba(52, 164, 181, 0.12);
+        --success: #20a36b;
+        --warning: #f59e0b;
+        --danger: #e05656;
+        --shadow-lg: 0 22px 54px rgba(56, 82, 110, 0.12);
+        --shadow-md: 0 10px 24px rgba(56, 82, 110, 0.08);
+        --radius-xl: 30px;
+        --radius-lg: 24px;
+        --radius-md: 18px;
+        --radius-sm: 14px;
+      }
+
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(174, 214, 227, 0.34), transparent 26%),
+          radial-gradient(circle at top right, rgba(250, 214, 196, 0.25), transparent 22%),
+          linear-gradient(180deg, rgba(255,255,255,0.32), rgba(255,255,255,0.12)),
+          var(--bg);
+        transition: background 0.25s ease, color 0.25s ease;
+      }
+
+      body[data-theme='dark'] {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: rgba(18, 24, 38, 0.92);
+        --panel-strong: rgba(20, 27, 42, 0.98);
+        --line: rgba(70, 86, 112, 0.78);
+        --text: #f4f8ff;
+        --muted: #a7b6ca;
+        --primary: #5f8cff;
+        --primary-dark: #dce7ff;
+        --teal: #22d3c5;
+        --teal-soft: rgba(34, 211, 197, 0.16);
+        --success: #31d67d;
+        --warning: #ffbf5d;
+        --danger: #ff7b7b;
+        --shadow-lg: 0 22px 54px rgba(0, 0, 0, 0.34);
+        --shadow-md: 0 10px 24px rgba(0, 0, 0, 0.24);
+        background:
+          radial-gradient(circle at top left, rgba(61, 92, 138, 0.18), transparent 22%),
+          radial-gradient(circle at top right, rgba(38, 50, 82, 0.22), transparent 18%),
+          linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)),
+          var(--bg);
+      }
+
+      button, input, select, textarea { font: inherit; }
+      button { border: none; cursor: pointer; }
+
+      .app-shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 300px minmax(0, 1fr);
+        gap: 20px;
+        padding: 16px;
+        transition: grid-template-columns 0.25s ease;
+      }
+
+      .app-shell.sidebar-collapsed {
+        grid-template-columns: 92px minmax(0, 1fr);
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 16px;
+        height: calc(100vh - 32px);
+        padding: 16px;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.78));
+        border: 1px solid rgba(255,255,255,0.9);
+        box-shadow: var(--shadow-lg);
+        backdrop-filter: blur(18px);
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        transition: padding 0.25s ease, border-radius 0.25s ease;
+      }
+
+      .sidebar-toggle {
+        position: absolute;
+        right: -14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 32px;
+        height: 48px;
+        border-radius: 16px;
+        background: var(--panel-strong);
+        border: 1px solid var(--line);
+        color: var(--text);
+        box-shadow: var(--shadow-md);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+      }
+
+      .app-shell.sidebar-collapsed .sidebar-toggle {
+        right: -16px;
+      }
+
+      .app-shell.sidebar-collapsed .sidebar {
+        padding: 14px 10px;
+      }
+
+      .app-shell.sidebar-collapsed .brand-subtitle,
+      .app-shell.sidebar-collapsed .nav-link span:last-child,
+      .app-shell.sidebar-collapsed .nav-footnote {
+        display: none;
+      }
+
+      .app-shell.sidebar-collapsed .brand-card {
+        padding: 12px 10px;
+      }
+
+      .app-shell.sidebar-collapsed .brand-logo-wrap {
+        padding: 8px;
+        border-radius: 18px;
+      }
+
+      .app-shell.sidebar-collapsed .brand-logo {
+        max-width: 56px;
+      }
+
+      .app-shell.sidebar-collapsed .nav-link {
+        justify-content: center;
+        padding: 14px 10px;
+      }
+
+      .app-shell.sidebar-collapsed .nav {
+        margin-top: 14px;
+      }
+
+      .brand-card, .topbar, .card, .filter-bar, .log-item {
+        backdrop-filter: blur(16px);
+      }
+
+      .brand-card {
+        background: var(--panel-strong);
+        border-radius: 28px;
+        border: 1px solid rgba(255,255,255,0.9);
+        box-shadow: var(--shadow-md);
+        padding: 16px;
+      }
+
+      .brand-logo-wrap {
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(248,250,252,0.98), rgba(255,255,255,0.92));
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 10px;
+      }
+
+      .brand-logo {
+        width: 100%;
+        max-width: 190px;
+        display: block;
+      }
+
+      .brand-subtitle {
+        margin: 14px 0 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.7;
+      }
+
+      .nav {
+        margin-top: 18px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav-link {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: transparent;
+        color: var(--text);
+        text-align: left;
+        transition: .2s ease;
+      }
+
+      .nav-link:hover,
+      .nav-link.active {
+        background: rgba(31, 157, 115, 0.12);
+        color: var(--primary-dark);
+        box-shadow: inset 0 0 0 1px rgba(31, 157, 115, 0.12);
+      }
+
+      .nav-icon {
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.92);
+        box-shadow: inset 0 0 0 1px rgba(31, 157, 115, 0.12);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+
+      .nav-footnote {
+        margin-top: auto;
+        padding: 18px;
+        border-radius: 22px;
+        background: rgba(247, 250, 252, 0.92);
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.8;
+      }
+
+      .content {
+        display: grid;
+        align-content: start;
+        gap: 16px;
+      }
+
+      .view-panel {
+        display: grid;
+        gap: 16px;
+        align-content: start;
+      }
+
+      .hidden { display: none !important; }
+
+      .topbar {
+        min-height: 60px;
+        padding: 10px 18px;
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.74));
+        border: 1px solid rgba(255,255,255,0.9);
+        box-shadow: var(--shadow-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .topbar h1 { margin: 0; font-size: 18px; }
+      .topbar p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+
+      .topbar-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .pill, .user-pill, .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 999px;
+      }
+
+      .pill, .user-pill {
+        padding: 10px 12px;
+        background: rgba(255,255,255,0.92);
+        box-shadow: var(--shadow-md);
+      }
+
+      .user-pill { padding-right: 14px; }
+
+      .theme-toggle {
+        border: none;
+        cursor: pointer;
+        color: var(--text);
+      }
+
+      .theme-toggle-label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--teal), var(--primary));
+        color: #fff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+
+      .tag {
+        padding: 6px 12px;
+        background: rgba(31, 157, 115, 0.1);
+        color: var(--primary-dark);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .tag.version-tag {
+        background: rgba(68, 191, 209, 0.12);
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: var(--radius-lg);
+        background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,255,255,0.76));
+        border: 1px solid rgba(255,255,255,0.94);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .hero-card {
+        min-height: 128px;
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,0.94), rgba(255,255,255,0.78)),
+          radial-gradient(circle at right top, rgba(190,229,235,0.42), transparent 25%);
+      }
+
+      .hero-card h2 {
+        margin: 10px 0 8px;
+        font-size: clamp(26px, 3.3vw, 42px);
+      }
+
+      .hero-card p {
+        margin: 0;
+        max-width: 760px;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 14px;
+      }
+
+      .hero-actions,
+      .button-row,
+      .mini-actions,
+      .watch-actions,
+      .model-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .action-btn,
+      .ghost-btn,
+      .danger-btn,
+      .mini-btn {
+        min-height: 48px;
+        padding: 0 18px;
+        border-radius: 16px;
+        font-weight: 700;
+      }
+
+      .primary-btn,
+      .secondary-btn,
+      .action-btn {
+        color: #fff;
+        background: linear-gradient(135deg, var(--teal), var(--primary));
+        box-shadow: 0 12px 26px rgba(31, 157, 115, 0.22);
+      }
+
+      .ghost-btn,
+      .mini-btn {
+        color: var(--primary-dark);
+        background: rgba(255,255,255,0.96);
+        box-shadow: inset 0 0 0 1px rgba(31, 157, 115, 0.12);
+      }
+
+      .danger-btn {
+        color: #fff;
+        background: linear-gradient(135deg, #ff8d79, var(--danger));
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 10px;
+      }
+
+      .stat-value {
+        font-size: clamp(22px, 2.2vw, 32px);
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .stat-desc {
+        margin-top: 8px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 13px;
+      }
+
+      .section-title-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .section-title-wrap h3 { margin: 6px 0 0; font-size: 18px; }
+      .section-title-wrap p { margin: 6px 0 0; color: var(--muted); line-height: 1.55; font-size: 14px; }
+
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+        gap: 12px;
+      }
+
+      .stack { display: grid; gap: 12px; }
+
+      .sub-panel,
+      .field-card,
+      .control-card,
+      .info-box,
+      .filter-bar {
+        background: rgba(248, 251, 253, 0.88);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow-md);
+      }
+
+      .sub-panel,
+      .field-card,
+      .control-card,
+      .info-box,
+      .filter-bar {
+        padding: 16px 18px;
+      }
+
+      .sub-title { margin: 0 0 6px; font-size: 17px; }
+      .sub-desc,
+      .helper-text,
+      .knowledge-text,
+      .subdued { color: var(--muted); line-height: 1.6; font-size: 14px; }
+
+      .upload-zone {
+        display: block;
+        padding: 18px 18px;
+        border: 1px dashed rgba(31, 157, 115, 0.28);
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.84), rgba(245, 250, 252, 0.92));
+        text-align: center;
+        cursor: pointer;
+      }
+
+      .upload-zone strong { display: block; font-size: 18px; margin-bottom: 8px; }
+      .upload-zone span { color: var(--muted); line-height: 1.55; font-size: 14px; }
+      .hidden-file { display: none; }
+
+      .controls-grid,
+      .form-grid,
+      .camera-grid,
+      .filters-grid,
+      .result-grid,
+      .monitor-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .controls-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .form-grid,
+      .camera-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .result-grid { grid-template-columns: minmax(0, 1.35fr) minmax(360px, 0.9fr); }
+      .monitor-grid { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); }
+      .filters-grid { grid-template-columns: 180px 180px 1fr auto; }
+
+      .field-card label,
+      .control-card label {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 14px;
+        margin-bottom: 10px;
+      }
+
+      .control-value { color: var(--text); font-weight: 800; }
+
+      .field-title,
+      .info-label { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+
+      .select-field,
+      .file-field,
+      .text-field,
+      select,
+      input[type='text'],
+      input[type='number'],
+      input[type='password'] {
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 14px;
+        border-radius: 15px;
+        border: 1px solid rgba(166, 190, 205, 0.72);
+        background: #fff;
+        color: var(--text);
+      }
+
+      input[type='range'] { width: 100%; accent-color: var(--primary); }
+
+      .status-banner {
+        min-height: 56px;
+        padding: 14px 18px;
+        border-radius: 18px;
+        background: rgba(31, 157, 115, 0.1);
+        color: var(--primary-dark);
+        font-weight: 700;
+      }
+
+      .status-banner.success { background: rgba(32, 163, 107, 0.14); color: var(--success); }
+      .status-banner.error { background: rgba(224, 86, 86, 0.12); color: var(--danger); }
+
+      .result-frame {
+        min-height: 420px;
+        border-radius: 24px;
+        border: 1px dashed rgba(166, 190, 205, 0.7);
+        background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(244,249,251,0.94));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      .empty-state { color: var(--muted); text-align: center; line-height: 1.8; padding: 24px; }
+
+      img.preview,
+      video.preview {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: none;
+        border-radius: 24px;
+      }
+
+      .info-value {
+        font-size: 18px;
+        font-weight: 700;
+        line-height: 1.65;
+        word-break: break-word;
+      }
+
+      .knowledge-title { margin: 0; font-size: 28px; }
+      .knowledge-list { margin: 0; padding-left: 22px; line-height: 1.9; }
+      .knowledge-items { display: grid; gap: 14px; }
+      .knowledge-item {
+        padding: 16px 18px;
+        border-radius: 18px;
+        background: rgba(248, 251, 253, 0.88);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-md);
+      }
+      .knowledge-item h4 { margin: 0 0 8px; font-size: 20px; }
+      .knowledge-meta { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+      .knowledge-details {
+        padding: 0;
+        overflow: hidden;
+      }
+      .knowledge-summary {
+        list-style: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+        padding: 16px 18px;
+      }
+      .knowledge-summary::-webkit-details-marker { display: none; }
+      .knowledge-summary h4 { margin-bottom: 6px; }
+      .knowledge-toggle {
+        flex: 0 0 auto;
+        color: var(--primary-dark);
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+      .knowledge-body {
+        padding: 0 18px 16px;
+      }
+      .result-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .result-counter {
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .compare-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+      }
+      .compare-column {
+        display: grid;
+        gap: 12px;
+      }
+      .compare-card {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(248, 251, 253, 0.88);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-md);
+      }
+      .compare-card h4 {
+        margin: 0 0 10px;
+        font-size: 18px;
+      }
+      .compare-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 10px;
+      }
+      .compare-scroll {
+        max-height: 720px;
+        overflow: auto;
+        padding-right: 4px;
+      }
+      .history-list {
+        display: grid;
+        gap: 12px;
+      }
+      .history-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .history-stage {
+        min-height: 188px;
+        display: grid;
+        align-content: start;
+      }
+      .history-item {
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(248, 251, 253, 0.88);
+        border: 1px solid var(--line);
+        box-shadow: var(--shadow-md);
+        cursor: pointer;
+        transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      }
+      .history-item:hover {
+        transform: translateY(-1px);
+        border-color: rgba(31, 157, 115, 0.26);
+        box-shadow: 0 12px 24px rgba(56, 82, 110, 0.1);
+      }
+      .history-item.active {
+        border-color: rgba(31, 157, 115, 0.38);
+        box-shadow: 0 14px 28px rgba(31, 157, 115, 0.12);
+      }
+      .history-item-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .history-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 800;
+      }
+      .history-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+      }
+      .history-id {
+        color: var(--muted);
+        font-size: 12px;
+        word-break: break-all;
+      }
+      .compact-btn {
+        min-height: 38px;
+        padding: 0 14px;
+        border-radius: 12px;
+        font-weight: 700;
+      }
+      .compact-btn.primary {
+        color: #fff;
+        background: linear-gradient(135deg, var(--teal), var(--primary));
+      }
+      .compact-btn.ghost {
+        color: var(--primary-dark);
+        background: rgba(255,255,255,0.96);
+        box-shadow: inset 0 0 0 1px rgba(31, 157, 115, 0.12);
+      }
+
+      pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: var(--text);
+        font-size: 13px;
+        line-height: 1.8;
+      }
+
+      .log-list { display: grid; gap: 14px; }
+
+      .log-item {
+        padding: 18px 20px;
+        border-radius: 22px;
+        background: rgba(255,255,255,0.95);
+        border: 1px solid rgba(255,255,255,0.9);
+        box-shadow: var(--shadow-md);
+        border-left: 4px solid #cad6df;
+      }
+
+      .log-item.warning { border-left-color: var(--warning); }
+      .log-item.error { border-left-color: var(--danger); }
+      .log-item.info { border-left-color: var(--primary); }
+      .log-item.debug { border-left-color: var(--teal); }
+
+      .log-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .log-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+      .log-tag { padding: 6px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; }
+      .level-warning { background: rgba(245, 158, 11, 0.14); color: #c87f00; }
+      .level-error { background: rgba(224, 86, 86, 0.14); color: var(--danger); }
+      .level-info { background: rgba(31, 157, 115, 0.12); color: var(--primary-dark); }
+      .level-debug { background: rgba(52, 164, 181, 0.14); color: #187989; }
+      .log-time { color: var(--muted); white-space: nowrap; }
+      .log-source {
+        color: var(--muted);
+        font-size: 13px;
+        word-break: break-word;
+      }
+      .log-message { font-size: 17px; line-height: 1.8; }
+
+      .auth-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .auth-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(21, 35, 45, 0.32);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        z-index: 1000;
+      }
+
+      .auth-modal-card {
+        width: min(560px, 100%);
+        background: rgba(255,255,255,0.98);
+        border-radius: 26px;
+        border: 1px solid rgba(255,255,255,0.94);
+        box-shadow: var(--shadow-lg);
+        padding: 24px;
+      }
+
+      .auth-modal-card h3 {
+        margin: 0 0 10px;
+        font-size: 24px;
+      }
+
+      .auth-modal-card p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .auth-status {
+        margin-top: 12px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .auth-status.error {
+        color: var(--danger);
+      }
+
+      .auth-status.success {
+        color: var(--success);
+      }
+
+      body[data-theme='dark'] .brand-logo-wrap,
+      body[data-theme='dark'] .pill,
+      body[data-theme='dark'] .user-pill,
+      body[data-theme='dark'] .sidebar-toggle,
+      body[data-theme='dark'] .sub-panel,
+      body[data-theme='dark'] .field-card,
+      body[data-theme='dark'] .control-card,
+      body[data-theme='dark'] .info-box,
+      body[data-theme='dark'] .filter-bar,
+      body[data-theme='dark'] .knowledge-item,
+      body[data-theme='dark'] .auth-modal-card {
+        background: rgba(23, 33, 48, 0.94);
+        border-color: rgba(88, 112, 132, 0.55);
+      }
+
+      body[data-theme='dark'] .upload-zone,
+      body[data-theme='dark'] .result-frame,
+      body[data-theme='dark'] .sidebar,
+      body[data-theme='dark'] .card,
+      body[data-theme='dark'] .topbar,
+      body[data-theme='dark'] .brand-card,
+      body[data-theme='dark'] .log-item {
+        border-color: rgba(88, 112, 132, 0.42);
+      }
+
+      body[data-theme='dark'] .sidebar {
+        background: linear-gradient(180deg, rgba(16, 22, 34, 0.98), rgba(16, 22, 34, 0.93));
+      }
+
+      body[data-theme='dark'] .brand-card,
+      body[data-theme='dark'] .topbar,
+      body[data-theme='dark'] .card,
+      body[data-theme='dark'] .log-item {
+        background: linear-gradient(180deg, rgba(18, 24, 38, 0.98), rgba(18, 24, 38, 0.92));
+      }
+
+      body[data-theme='dark'] .brand-logo-wrap {
+        background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(255, 255, 255, 0.96));
+      }
+
+      body[data-theme='dark'] .nav-link {
+        color: #c5d2e4;
+      }
+
+      body[data-theme='dark'] .nav-link:hover,
+      body[data-theme='dark'] .nav-link.active {
+        background: rgba(95, 140, 255, 0.16);
+        color: #f7fbff;
+        box-shadow: inset 0 0 0 1px rgba(95, 140, 255, 0.25);
+      }
+
+      body[data-theme='dark'] .nav-icon {
+        background: rgba(28, 35, 50, 0.98);
+        color: #cfe0ff;
+        box-shadow: inset 0 0 0 1px rgba(84, 98, 126, 0.58);
+      }
+
+      body[data-theme='dark'] .tag {
+        background: rgba(95, 140, 255, 0.16);
+        color: #cddcff;
+      }
+
+      body[data-theme='dark'] .stats-grid .card:nth-child(1) {
+        background: linear-gradient(135deg, rgba(95, 90, 220, 0.92), rgba(114, 89, 240, 0.94));
+      }
+
+      body[data-theme='dark'] .stats-grid .card:nth-child(2) {
+        background: linear-gradient(135deg, rgba(37, 117, 214, 0.94), rgba(47, 130, 228, 0.94));
+      }
+
+      body[data-theme='dark'] .stats-grid .card:nth-child(3) {
+        background: linear-gradient(135deg, rgba(0, 160, 80, 0.92), rgba(13, 166, 95, 0.94));
+      }
+
+      body[data-theme='dark'] .stats-grid .card:nth-child(4) {
+        background: linear-gradient(135deg, rgba(236, 138, 0, 0.92), rgba(217, 126, 0, 0.94));
+      }
+
+      body[data-theme='dark'] .stats-grid .card .stat-label,
+      body[data-theme='dark'] .stats-grid .card .stat-value,
+      body[data-theme='dark'] .stats-grid .card .stat-desc {
+        color: #f7fbff;
+      }
+
+      body[data-theme='dark'] .select-field,
+      body[data-theme='dark'] .file-field,
+      body[data-theme='dark'] .text-field,
+      body[data-theme='dark'] select,
+      body[data-theme='dark'] input[type='text'],
+      body[data-theme='dark'] input[type='number'],
+      body[data-theme='dark'] input[type='password'] {
+        background: rgba(15, 23, 34, 0.92);
+        color: var(--text);
+        border-color: rgba(88, 112, 132, 0.72);
+      }
+
+      body[data-theme='dark'] .ghost-btn,
+      body[data-theme='dark'] .mini-btn,
+      body[data-theme='dark'] .theme-toggle {
+        background: rgba(23, 33, 48, 0.96);
+        color: var(--primary-dark);
+      }
+
+      @media (max-width: 1440px) {
+        .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dashboard-grid,
+        .result-grid,
+        .monitor-grid,
+        .compare-layout { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 1180px) {
+        .app-shell { grid-template-columns: 1fr; }
+        .sidebar { position: static; height: auto; }
+        .app-shell.sidebar-collapsed { grid-template-columns: 1fr; }
+        .sidebar-toggle { display: none; }
+        .controls-grid,
+        .form-grid,
+        .camera-grid,
+        .filters-grid,
+        .stats-grid { grid-template-columns: 1fr; }
+      }
+
+      @media (max-width: 768px) {
+        .app-shell { padding: 12px; gap: 12px; }
+        .sidebar,
+        .card,
+        .brand-card,
+        .topbar { padding: 16px; }
+        .hero-card,
+        .topbar { flex-direction: column; align-items: stretch; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand-card">
+            <div class="brand-logo-wrap">
+              <img class="brand-logo" src="/assets/logo.svg" alt="YOLO Logo" />
+            </div>
+          <p class="brand-subtitle">中草药识别与流媒体智能监控控制台</p>
+        </div>
+
+        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="切换侧边栏"><span id="sidebar-toggle-icon">‹</span></button>
+
+        <nav class="nav">
+          <button class="nav-link active" type="button" data-view="dashboard-view" data-scroll="page-dashboard"><span class="nav-icon">◔</span><span>仪表盘</span></button>
+          <button class="nav-link" type="button" data-view="dashboard-view" data-scroll="page-detect"><span class="nav-icon">▣</span><span>检测中心</span></button>
+          <button class="nav-link" type="button" data-view="compare-view" data-scroll="compare-root"><span class="nav-icon">⇄</span><span>模型对比</span></button>
+          <button class="nav-link" type="button" data-view="monitor-view" data-scroll="monitor-root"><span class="nav-icon">◉</span><span>监控中心</span></button>
+          <button class="nav-link" type="button" data-view="logs-view" data-scroll="logs-root"><span class="nav-icon">☰</span><span>日志中心</span></button>
+          <button class="nav-link" type="button" data-view="settings-view" data-scroll="settings-root"><span class="nav-icon">⚙</span><span>参数设置</span></button>
+        </nav>
+
+        <div class="nav-footnote">当前支持图片/视频识别、模型切换、AI 草药介绍、目录监控、RTSP/ONVIF 摄像机接入以及独立日志中心展示。</div>
+      </aside>
+
+      <main class="content">
+        <section id="dashboard-view" class="view-panel">
+          <header class="topbar">
+            <div>
+              <h1>仪表盘</h1>
+              <p>系统概览与快捷操作</p>
+            </div>
+            <div class="topbar-actions">
+              <span class="tag version-tag">V3.1</span>
+              <button id="dashboard-refresh-btn" class="action-btn" type="button">刷新数据</button>
+              <button id="go-monitor-btn" class="ghost-btn" type="button">查看任务</button>
+              <button id="theme-toggle" class="pill theme-toggle" type="button"><span id="theme-toggle-icon">🌙</span><span id="theme-toggle-label" class="theme-toggle-label">夜间</span></button>
+              <button id="open-account-settings" class="user-pill" type="button"><span id="user-avatar" class="avatar">A</span><strong id="current-username">未登录</strong></button>
+              <button id="logout-btn" class="ghost-btn" type="button">退出登录</button>
+            </div>
+          </header>
+
+          <section class="stats-grid">
+            <article class="card"><div class="stat-label">当前模型</div><div id="stat-model-name" class="stat-value">加载中...</div><div class="stat-desc">用于识别任务的当前 YOLO 模型</div></article>
+            <article class="card"><div class="stat-label">系统状态</div><div id="stat-system-status" class="stat-value">初始化中</div><div class="stat-desc">后端服务运行状态与加载情况</div></article>
+            <article class="card"><div class="stat-label">已上传模型数</div><div id="stat-model-count" class="stat-value">0</div><div class="stat-desc">支持用户上传并来回切换不同模型试效果</div></article>
+            <article class="card"><div class="stat-label">目录监控处理数</div><div id="stat-watch-count" class="stat-value">0</div><div class="stat-desc">自动检测的累计文件数量</div></article>
+          </section>
+
+          <section class="dashboard-grid">
+            <section id="page-detect" class="card stack">
+              <div class="section-title-wrap">
+                <div>
+                  <span class="tag">文件识别</span>
+                  <h3>上传图片或视频</h3>
+                  <p>支持图片与视频统一识别入口，结果自动落盘并同步展示。</p>
+                </div>
+                <span class="tag">在线</span>
+              </div>
+
+              <form id="detect-form" class="stack">
+                <label class="upload-zone" for="file">
+                  <strong>点击上传文件</strong>
+                  <span id="file-label">支持图片和视频，识别结果将自动保存到输出目录。</span>
+                  <input id="file" class="hidden-file" name="file" type="file" accept=".jpg,.jpeg,.png,.bmp,.webp,.mp4,.avi,.mov,.mkv,.flv" multiple required />
+                </label>
+
+                <input name="device" type="hidden" value="cpu" />
+                <input id="conf" name="conf" type="hidden" value="0.25" />
+                <input id="iou" name="iou" type="hidden" value="0.45" />
+                <input id="imgsz" name="imgsz" type="hidden" value="640" />
+
+                <div class="button-row">
+                  <button id="submit-btn" class="primary-btn" type="submit">开始检测</button>
+                  <button id="open-settings-btn" class="ghost-btn" type="button">前往参数设置</button>
+                  <button id="refresh-status" class="ghost-btn" type="button">刷新状态</button>
+                </div>
+              </form>
+
+              <div id="status" class="status-banner">等待上传图片或视频。</div>
+              <div id="batch-nav" class="result-toolbar hidden">
+                <div class="button-row">
+                  <button id="prev-result-btn" class="ghost-btn" type="button">上一项</button>
+                  <button id="next-result-btn" class="ghost-btn" type="button">下一项</button>
+                </div>
+                <div id="result-counter" class="result-counter">第 1 / 1 项</div>
+              </div>
+              <div class="section-title-wrap"><div><span class="tag">识别输出</span><h3>检测结果</h3><p>上传完成后，在同一个窗口中直接查看标注后的图片或视频结果。</p></div></div>
+              <div class="result-frame"><div id="empty-result" class="empty-state">上传并开始检测后，这里会显示识别结果。</div><img id="result-image" class="preview" alt="检测结果图片" /><video id="result-video" class="preview" controls></video></div>
+            </section>
+
+            <section class="stack">
+              <section class="card stack">
+                <div class="section-title-wrap"><div><span class="tag">草药介绍</span><h3>AI 联动结果</h3><p>识别出中草药名称后，自动生成基本描述与药用功效。</p></div></div>
+                <h3 id="knowledge-herb-name" class="knowledge-title">等待识别中草药</h3>
+                <div id="knowledge-items" class="knowledge-items">
+                  <div class="knowledge-item">
+                    <p class="knowledge-text">识别出中草药名称后，这里会显示基本描述。</p>
+                    <ul class="knowledge-list"><li class="subdued">药用功效将在识别完成后显示。</li></ul>
+                  </div>
+                </div>
+                <div id="knowledge-notes" class="helper-text">尚未触发 AI 草药知识生成。</div>
+              </section>
+            </section>
+          </section>
+        </section>
+
+        <section id="settings-view" class="view-panel hidden">
+          <header class="topbar"><div><h1>参数设置</h1><p>集中管理识别阈值与推理尺寸</p></div></header>
+
+          <section id="settings-root" class="card stack">
+            <div class="section-title-wrap"><div><span class="tag">检测参数</span><h3>置信度、IoU 与尺寸</h3><p>这三个参数会直接影响检测框保留策略、重叠框处理方式，以及推理速度与识别精度。</p></div></div>
+
+            <div class="controls-grid">
+              <div class="control-card"><label for="conf-range"><span>置信度</span><span id="conf-setting-value" class="control-value">0.25</span></label><input id="conf-range" type="range" min="0" max="1" step="0.01" value="0.25" /><div class="sub-desc">表示模型对目标判断的把握程度。数值越高，保留下来的框越严格，误检通常会更少。</div></div>
+              <div class="control-card"><label for="iou-range"><span>IoU</span><span id="iou-setting-value" class="control-value">0.45</span></label><input id="iou-range" type="range" min="0" max="1" step="0.01" value="0.45" /><div class="sub-desc">用于处理重叠检测框。数值越低越容易合并相似框，数值越高更倾向保留多个接近的框。</div></div>
+              <div class="control-card"><label for="imgsz-range"><span>尺寸</span><span id="imgsz-setting-value" class="control-value">640</span></label><input id="imgsz-range" type="range" min="320" max="1280" step="32" value="640" /><div class="sub-desc">表示送入模型推理的图像尺寸。尺寸越大通常细节越多，但会增加内存占用与推理时间。</div></div>
+            </div>
+
+            <div class="info-box">
+              <div class="info-label">当前生效参数摘要</div>
+              <div class="info-value">置信度 <span id="conf-summary-value" class="control-value">0.25</span> ｜ IoU <span id="iou-summary-value" class="control-value">0.45</span> ｜ 尺寸 <span id="imgsz-summary-value" class="control-value">640</span></div>
+            </div>
+
+            <div class="dashboard-grid">
+              <div class="sub-panel">
+                <h4 class="sub-title">监控目录</h4>
+                <p class="sub-desc">向监控目录写入图片或视频后，系统会自动执行识别任务。</p>
+                <div class="info-box"><div class="info-label">监控目录</div><div id="watch-dir-value" class="info-value">./watch</div></div>
+                <div class="info-box" style="margin-top:12px;"><div class="info-label">监控状态</div><div id="watch-status" class="info-value">未启动</div></div>
+                <div class="watch-actions" style="margin-top:12px;"><button id="toggle-watch" class="secondary-btn" type="button">启动监控</button><button id="refresh-logs-side" class="ghost-btn" type="button">刷新日志</button></div>
+              </div>
+
+              <div class="sub-panel">
+                <h4 class="sub-title">模型管理</h4>
+                <p class="sub-desc">上传并切换用户自训练 YOLO 模型，快速试验不同模型的识别效果。</p>
+                <div class="form-grid">
+                  <div class="field-card" style="grid-column:1 / -1;"><div class="field-title">上传模型文件（.pt / .onnx）</div><input id="model-file" class="file-field" type="file" accept=".pt,.onnx" /></div>
+                  <div class="field-card" style="grid-column:1 / -1;"><div class="field-title">切换当前模型</div><select id="model-select" class="select-field"></select></div>
+                </div>
+                <div class="model-actions" style="margin-top:12px;"><button id="upload-model-btn" class="secondary-btn" type="button">上传并启用</button><button id="switch-model-btn" class="primary-btn" type="button">切换模型</button><button id="refresh-models-btn" class="ghost-btn" type="button">刷新模型列表</button></div>
+              </div>
+
+              <div class="sub-panel" style="grid-column:1 / -1;">
+                <h4 class="sub-title">AI 配置</h4>
+                <p class="sub-desc">自定义填写 AI 的 API 地址、模型名称与密钥。保存后会用于草药介绍与模型对比分析。</p>
+                <div class="form-grid">
+                  <div class="field-card">
+                    <label for="ai-base-url">AI API 地址</label>
+                    <input id="ai-base-url" class="text-field" type="text" placeholder="例如：https://api.siliconflow.cn/v1" />
+                  </div>
+                  <div class="field-card">
+                    <label for="ai-model-name">AI 模型名称</label>
+                    <input id="ai-model-name" class="text-field" type="text" placeholder="例如：Qwen/Qwen2.5-7B-Instruct" />
+                  </div>
+                  <div class="field-card" style="grid-column:1 / -1;">
+                    <label for="ai-api-key">AI 密钥</label>
+                    <input id="ai-api-key" class="text-field" type="password" placeholder="请输入 AI API Key" />
+                  </div>
+                  <div class="field-card">
+                    <label for="ai-timeout-seconds">超时时间（秒）</label>
+                    <input id="ai-timeout-seconds" class="text-field" type="number" min="1" max="600" value="30" />
+                  </div>
+                </div>
+                <div class="model-actions" style="margin-top:12px;">
+                  <button id="save-ai-settings-btn" class="primary-btn" type="button">保存 AI 配置</button>
+                  <button id="reset-ai-settings-btn" class="ghost-btn" type="button">重置为已保存</button>
+                </div>
+                <div id="ai-settings-status" class="status-banner" style="margin-top:12px;">尚未加载 AI 配置。</div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section id="compare-view" class="view-panel hidden">
+          <header class="topbar"><div><h1>模型对比</h1><p>同一批图片在 A / B 两个模型下分别识别，对比结果并给出整体分析建议</p></div></header>
+
+          <section id="compare-root" class="card stack">
+            <div class="section-title-wrap"><div><span class="tag">双模型对比</span><h3>批量图片识别对比</h3><p>上传同一批图片，先使用 A 模型识别，再使用 B 模型识别，左右分栏逐图查看结果，并保留历史记录。</p></div></div>
+
+            <form id="compare-form" class="stack">
+              <label class="upload-zone" for="compare-files">
+                <strong>点击上传多张图片</strong>
+                <span id="compare-file-label">支持一次上传多张图片，仅用于双模型对比识别。</span>
+                <input id="compare-files" class="hidden-file" type="file" accept=".jpg,.jpeg,.png,.bmp,.webp" multiple required />
+              </label>
+
+              <div class="form-grid">
+                <div class="field-card"><div class="field-title">模型 A</div><select id="compare-model-a" class="select-field"></select></div>
+                <div class="field-card"><div class="field-title">模型 B</div><select id="compare-model-b" class="select-field"></select></div>
+              </div>
+
+              <div class="button-row">
+                <button id="compare-submit-btn" class="primary-btn" type="submit">开始双模型对比</button>
+                <button id="compare-history-btn" class="ghost-btn" type="button">刷新历史记录</button>
+              </div>
+            </form>
+
+            <div id="compare-status" class="status-banner">等待上传图片并选择两个模型进行对比。</div>
+
+            <div class="compare-layout">
+              <section class="compare-column">
+                <div class="section-title-wrap"><div><span class="tag">模型 A</span><h3 id="compare-model-a-title">结果窗口 A</h3></div></div>
+                <div id="compare-results-a" class="compare-scroll stack"><div class="empty-state">暂无对比结果。</div></div>
+              </section>
+              <section class="compare-column">
+                <div class="section-title-wrap"><div><span class="tag">模型 B</span><h3 id="compare-model-b-title">结果窗口 B</h3></div></div>
+                <div id="compare-results-b" class="compare-scroll stack"><div class="empty-state">暂无对比结果。</div></div>
+              </section>
+            </div>
+
+            <div class="compare-layout">
+              <section class="card stack">
+                <div class="section-title-wrap"><div><span class="tag">整体分析</span><h3>AI 对比建议</h3><p>这里展示两个模型在整批图片上的表现差异与优化建议。</p></div></div>
+                <div id="compare-analysis" class="knowledge-item">
+                  <p class="knowledge-text">尚未生成模型对比分析。</p>
+                </div>
+              </section>
+              <section class="card stack">
+                <div class="section-title-wrap"><div><span class="tag">历史记录</span><h3>模型对比历史</h3><p>仅展示一条历史记录，支持左右切换并点击加载详情，保持页面紧凑简洁。</p></div></div>
+                <div class="history-toolbar">
+                  <div id="compare-history-counter" class="result-counter">第 0 / 0 条</div>
+                  <div class="mini-actions">
+                    <button id="compare-history-prev-btn" class="compact-btn ghost" type="button">上一条</button>
+                    <button id="compare-history-next-btn" class="compact-btn ghost" type="button">下一条</button>
+                  </div>
+                </div>
+                <div id="compare-history" class="history-list">
+                  <div id="compare-history-stage" class="history-stage"><div class="empty-state">暂无历史记录。</div></div>
+                </div>
+              </section>
+            </div>
+          </section>
+        </section>
+
+        <section id="monitor-view" class="view-panel hidden">
+          <header class="topbar"><div><h1>监控中心</h1><p>接入 RTSP / ONVIF 摄像机，实时预览识别结果</p></div><div class="topbar-actions"><button id="go-dashboard-btn" class="ghost-btn" type="button">返回仪表盘</button></div></header>
+
+          <section id="monitor-root" class="monitor-grid">
+            <section class="card stack">
+              <div class="section-title-wrap"><div><span class="tag">摄像机配置</span><h3>新增监控源</h3><p>支持直接接入 RTSP，或通过 ONVIF 解析出 RTSP 地址后再接入。</p></div></div>
+              <div class="camera-grid">
+                <div class="field-card"><label for="camera-name">摄像机名称</label><input id="camera-name" class="text-field" type="text" placeholder="例如：一号摄像头" /></div>
+                <div class="field-card"><label for="camera-type">协议类型</label><select id="camera-type" class="select-field"><option value="rtsp">RTSP</option><option value="onvif">ONVIF</option></select></div>
+                <div class="field-card"><label for="camera-url">RTSP 地址</label><input id="camera-url" class="text-field" type="text" placeholder="rtsp://..." /></div>
+                <div class="field-card"><label for="camera-host">ONVIF 主机</label><input id="camera-host" class="text-field" type="text" placeholder="192.168.1.64" /></div>
+                <div class="field-card"><label for="camera-port">ONVIF 端口</label><input id="camera-port" class="text-field" type="number" value="80" /></div>
+                <div class="field-card"><label for="camera-profile-token">Profile Token</label><input id="camera-profile-token" class="text-field" type="text" placeholder="可选" /></div>
+                <div class="field-card"><label for="camera-username">用户名</label><input id="camera-username" class="text-field" type="text" placeholder="请输入摄像机账号" /></div>
+                <div class="field-card"><label for="camera-password">密码</label><input id="camera-password" class="text-field" type="password" placeholder="请输入摄像机密码" /></div>
+              </div>
+              <div class="button-row"><button id="resolve-onvif-btn" class="ghost-btn" type="button">解析 ONVIF</button><button id="save-camera-btn" class="secondary-btn" type="button">保存摄像机</button><button id="start-camera-btn" class="primary-btn" type="button">启动监控</button><button id="stop-camera-btn" class="danger-btn" type="button">停止监控</button></div>
+            </section>
+
+            <section class="card stack">
+              <div class="section-title-wrap"><div><span class="tag">实时画面</span><h3>检测预览</h3><p>浏览器内实时查看监控流与目标识别结果。</p></div></div>
+              <div class="info-box"><div class="info-label">当前摄像机</div><div id="camera-current-name" class="info-value">未选择</div></div>
+              <div class="info-box"><div class="info-label">监控状态</div><div id="camera-runtime-status" class="info-value">未启动</div></div>
+              <div class="result-frame" style="min-height:360px;"><div id="camera-empty" class="empty-state">启动监控后将在这里显示 MJPEG 实时识别画面。</div><img id="camera-stream-image" class="preview" alt="实时监控画面" /></div>
+              <div class="info-box"><div class="info-label">当前检测结果</div><pre id="camera-detections">暂无数据。</pre></div>
+            </section>
+          </section>
+        </section>
+
+        <section id="logs-view" class="view-panel hidden">
+          <header class="topbar"><div><h1>日志中心</h1><p>统一查看系统历史日志与实时运行结果</p></div></header>
+
+          <section id="logs-root" class="card stack">
+            <div class="section-title-wrap"><div><span class="tag">日志中心</span><h3>运行日志与结构化结果</h3><p>日志与识别后的结构化结果已统一移动到这个独立页面，不再与检测结果主画面同屏混排。</p></div></div>
+
+            <div class="info-box">
+              <div class="info-label">结构化结果</div>
+              <pre id="result-json">暂无结果。</pre>
+            </div>
+
+            <div class="filter-bar stack">
+              <div class="filters-grid">
+                <select id="log-level-filter" class="select-field"><option value="all">所有级别</option><option value="INFO">INFO</option><option value="WARNING">WARNING</option><option value="ERROR">ERROR</option><option value="DEBUG">DEBUG</option></select>
+                <select id="log-sort-filter" class="select-field"><option value="newest">最新在前</option><option value="oldest">最早在前</option></select>
+                <input id="log-search-input" class="text-field" type="text" placeholder="搜索消息内容、来源或详情" />
+                <button id="refresh-logs" class="secondary-btn" type="button">刷新日志</button>
+              </div>
+              <div class="mini-actions"><button id="reset-logs-filter" class="ghost-btn" type="button">重置</button><button id="refresh-model" class="ghost-btn" type="button">刷新模型信息</button></div>
+            </div>
+
+            <div id="logs-empty" class="empty-state">暂无日志。</div>
+            <div id="logs-list" class="log-list"></div>
+            <pre id="logs-output" class="hidden">暂无日志。</pre>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="auth-modal" class="auth-modal hidden">
+      <div class="auth-modal-card">
+        <h3>账户与密码设置</h3>
+        <p>首次登录后请立即修改账户密码。新密码会持久化到 [`config/auth.json`](config/auth.json)，并用于后续所有后台访问。</p>
+        <form id="auth-form" class="stack">
+          <div class="form-grid">
+            <div class="field-card">
+              <label for="auth-username">新账户名</label>
+              <input id="auth-username" class="text-field" type="text" placeholder="请输入新的账户名" required />
+            </div>
+            <div class="field-card">
+              <label for="auth-current-password">当前密码</label>
+              <input id="auth-current-password" class="text-field" type="password" placeholder="请输入当前密码" required />
+            </div>
+            <div class="field-card" style="grid-column: 1 / -1;">
+              <label for="auth-new-password">新密码</label>
+              <input id="auth-new-password" class="text-field" type="password" placeholder="请输入新的密码，至少 8 位" required />
+            </div>
+          </div>
+          <div class="auth-actions">
+            <button id="save-auth-btn" class="primary-btn" type="submit">保存账户密码</button>
+            <button id="close-auth-modal" class="ghost-btn" type="button">取消</button>
+          </div>
+        </form>
+        <div id="auth-status" class="auth-status">登录后可在此修改系统账户与密码。</div>
+      </div>
+    </div>
+
+    <script>
+      const navLinks = document.querySelectorAll('.nav-link');
+      const viewPanels = document.querySelectorAll('.view-panel');
+      const form = document.getElementById('detect-form');
+      const submitButton = document.getElementById('submit-btn');
+      const refreshStatusButton = document.getElementById('refresh-status');
+      const refreshModelButton = document.getElementById('refresh-model');
+      const refreshLogsButton = document.getElementById('refresh-logs');
+      const refreshLogsSideButton = document.getElementById('refresh-logs-side');
+      const toggleWatchButton = document.getElementById('toggle-watch');
+      const uploadModelButton = document.getElementById('upload-model-btn');
+      const refreshModelsButton = document.getElementById('refresh-models-btn');
+      const switchModelButton = document.getElementById('switch-model-btn');
+      const saveCameraButton = document.getElementById('save-camera-btn');
+      const startCameraButton = document.getElementById('start-camera-btn');
+      const stopCameraButton = document.getElementById('stop-camera-btn');
+      const resolveOnvifButton = document.getElementById('resolve-onvif-btn');
+      const dashboardRefreshButton = document.getElementById('dashboard-refresh-btn');
+      const goMonitorButton = document.getElementById('go-monitor-btn');
+      const goDashboardButton = document.getElementById('go-dashboard-btn');
+      const openSettingsButton = document.getElementById('open-settings-btn');
+      const resetLogsFilterButton = document.getElementById('reset-logs-filter');
+      const themeToggleButton = document.getElementById('theme-toggle');
+      const themeToggleIconNode = document.getElementById('theme-toggle-icon');
+      const themeToggleLabelNode = document.getElementById('theme-toggle-label');
+      const appShellNode = document.querySelector('.app-shell');
+      const sidebarToggleButton = document.getElementById('sidebar-toggle');
+      const sidebarToggleIconNode = document.getElementById('sidebar-toggle-icon');
+      const openAccountSettingsButton = document.getElementById('open-account-settings');
+      const closeAuthModalButton = document.getElementById('close-auth-modal');
+      const logoutButton = document.getElementById('logout-btn');
+      const authModalNode = document.getElementById('auth-modal');
+      const authFormNode = document.getElementById('auth-form');
+      const authUsernameNode = document.getElementById('auth-username');
+      const authCurrentPasswordNode = document.getElementById('auth-current-password');
+      const authNewPasswordNode = document.getElementById('auth-new-password');
+      const authStatusNode = document.getElementById('auth-status');
+      const currentUsernameNode = document.getElementById('current-username');
+      const userAvatarNode = document.getElementById('user-avatar');
+      const fileInput = document.getElementById('file');
+      const compareFilesInput = document.getElementById('compare-files');
+      const compareFileLabelNode = document.getElementById('compare-file-label');
+      const compareFormNode = document.getElementById('compare-form');
+      const compareSubmitButton = document.getElementById('compare-submit-btn');
+      const compareHistoryButton = document.getElementById('compare-history-btn');
+      const compareModelANode = document.getElementById('compare-model-a');
+      const compareModelBNode = document.getElementById('compare-model-b');
+      const compareModelATitleNode = document.getElementById('compare-model-a-title');
+      const compareModelBTitleNode = document.getElementById('compare-model-b-title');
+      const compareResultsANode = document.getElementById('compare-results-a');
+      const compareResultsBNode = document.getElementById('compare-results-b');
+      const compareAnalysisNode = document.getElementById('compare-analysis');
+      const compareHistoryNode = document.getElementById('compare-history');
+      const compareStatusNode = document.getElementById('compare-status');
+      const modelFileInput = document.getElementById('model-file');
+      const modelSelectNode = document.getElementById('model-select');
+      const aiBaseUrlNode = document.getElementById('ai-base-url');
+      const aiModelNameNode = document.getElementById('ai-model-name');
+      const aiApiKeyNode = document.getElementById('ai-api-key');
+      const aiTimeoutSecondsNode = document.getElementById('ai-timeout-seconds');
+      const aiSettingsStatusNode = document.getElementById('ai-settings-status');
+      const saveAiSettingsButton = document.getElementById('save-ai-settings-btn');
+      const resetAiSettingsButton = document.getElementById('reset-ai-settings-btn');
+      const cameraNameNode = document.getElementById('camera-name');
+      const cameraTypeNode = document.getElementById('camera-type');
+      const cameraUrlNode = document.getElementById('camera-url');
+      const cameraHostNode = document.getElementById('camera-host');
+      const cameraPortNode = document.getElementById('camera-port');
+      const cameraUsernameNode = document.getElementById('camera-username');
+      const cameraPasswordNode = document.getElementById('camera-password');
+      const cameraProfileTokenNode = document.getElementById('camera-profile-token');
+      const fileLabel = document.getElementById('file-label');
+      const statusNode = document.getElementById('status');
+      const imageNode = document.getElementById('result-image');
+      const videoNode = document.getElementById('result-video');
+      const emptyResultNode = document.getElementById('empty-result');
+      const jsonNode = document.getElementById('result-json');
+      let mustChangePassword = false;
+      const logsNode = document.getElementById('logs-output');
+      const logsListNode = document.getElementById('logs-list');
+      const logsEmptyNode = document.getElementById('logs-empty');
+      const logLevelFilterNode = document.getElementById('log-level-filter');
+      const logSortFilterNode = document.getElementById('log-sort-filter');
+      const logSearchInputNode = document.getElementById('log-search-input');
+      const modelNameNode = document.getElementById('stat-model-name');
+      const modelNameTopNode = document.getElementById('stat-model-name');
+      const systemStatusNode = document.getElementById('stat-system-status');
+      const watchStatusNode = document.getElementById('watch-status');
+      const watchDirValueNode = document.getElementById('watch-dir-value');
+      const modelCountNode = document.getElementById('stat-model-count');
+      const watchCountNode = document.getElementById('stat-watch-count');
+      const cameraCurrentNameNode = document.getElementById('camera-current-name');
+      const cameraRuntimeStatusNode = document.getElementById('camera-runtime-status');
+      const cameraStreamImageNode = document.getElementById('camera-stream-image');
+      const cameraEmptyNode = document.getElementById('camera-empty');
+      const cameraDetectionsNode = document.getElementById('camera-detections');
+      const knowledgeHerbNameNode = document.getElementById('knowledge-herb-name');
+      const knowledgeItemsNode = document.getElementById('knowledge-items');
+      const knowledgeNotesNode = document.getElementById('knowledge-notes');
+      const confSettingValueNode = document.getElementById('conf-setting-value');
+      const iouSettingValueNode = document.getElementById('iou-setting-value');
+      const imgszSettingValueNode = document.getElementById('imgsz-setting-value');
+      const confSummaryValueNode = document.getElementById('conf-summary-value');
+      const iouSummaryValueNode = document.getElementById('iou-summary-value');
+      const imgszSummaryValueNode = document.getElementById('imgsz-summary-value');
+
+      let currentCameraId = null;
+      let latestLogs = [];
+      let currentBatchResults = [];
+      let currentBatchIndex = 0;
+      let compareHistoryRecords = [];
+      let compareHistoryIndex = 0;
+
+      function applyTheme(theme) {
+        document.body.dataset.theme = theme;
+        if (theme === 'dark') {
+          themeToggleIconNode.textContent = '☀️';
+          themeToggleLabelNode.textContent = '日光';
+        } else {
+          themeToggleIconNode.textContent = '🌙';
+          themeToggleLabelNode.textContent = '夜间';
+        }
+      }
+
+      function initializeTheme() {
+        const savedTheme = localStorage.getItem('hv-theme') || 'light';
+        applyTheme(savedTheme);
+      }
+
+      function applySidebarState(collapsed) {
+        appShellNode.classList.toggle('sidebar-collapsed', collapsed);
+        sidebarToggleIconNode.textContent = collapsed ? '›' : '‹';
+        sidebarToggleButton.setAttribute('aria-label', collapsed ? '展开侧边栏' : '收起侧边栏');
+      }
+
+      function initializeSidebar() {
+        const collapsed = localStorage.getItem('hv-sidebar-collapsed') === '1';
+        applySidebarState(collapsed);
+      }
+
+      const rangeBindings = [
+        { range: 'conf-range', hidden: 'conf', value: 'conf-value', formatter: (value) => Number(value).toFixed(2) },
+        { range: 'iou-range', hidden: 'iou', value: 'iou-value', formatter: (value) => Number(value).toFixed(2) },
+        { range: 'imgsz-range', hidden: 'imgsz', value: 'imgsz-value', formatter: (value) => String(value) },
+      ];
+
+      function switchView(viewId, scrollId = null) {
+        navLinks.forEach((item) => item.classList.toggle('active', item.dataset.view === viewId && item.dataset.scroll === scrollId ? true : item.classList.contains('active') && item.dataset.view === viewId && !scrollId));
+        viewPanels.forEach((panel) => panel.classList.toggle('hidden', panel.id !== viewId));
+        if (scrollId) {
+          const target = document.getElementById(scrollId);
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
+      navLinks.forEach((button) => {
+        button.addEventListener('click', async () => {
+          navLinks.forEach((item) => item.classList.remove('active'));
+          button.classList.add('active');
+          viewPanels.forEach((panel) => panel.classList.toggle('hidden', panel.id !== button.dataset.view));
+
+          if (button.dataset.scroll) {
+            const target = document.getElementById(button.dataset.scroll);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+
+          if (button.dataset.view === 'logs-view') await loadLogs();
+          if (button.dataset.view === 'monitor-view' && currentCameraId) await loadCameraStatus(currentCameraId);
+        });
+      });
+
+      rangeBindings.forEach(({ range, hidden, value, formatter }) => {
+        const rangeNode = document.getElementById(range);
+        const hiddenNode = document.getElementById(hidden);
+        const valueNode = document.getElementById(value);
+        const sync = () => {
+          hiddenNode.value = rangeNode.value;
+          if (valueNode) valueNode.textContent = formatter(rangeNode.value);
+          if (value === 'conf-value') {
+            if (confSettingValueNode) confSettingValueNode.textContent = formatter(rangeNode.value);
+            if (confSummaryValueNode) confSummaryValueNode.textContent = formatter(rangeNode.value);
+          }
+          if (value === 'iou-value') {
+            if (iouSettingValueNode) iouSettingValueNode.textContent = formatter(rangeNode.value);
+            if (iouSummaryValueNode) iouSummaryValueNode.textContent = formatter(rangeNode.value);
+          }
+          if (value === 'imgsz-value') {
+            if (imgszSettingValueNode) imgszSettingValueNode.textContent = formatter(rangeNode.value);
+            if (imgszSummaryValueNode) imgszSummaryValueNode.textContent = formatter(rangeNode.value);
+          }
+        };
+        rangeNode.addEventListener('input', sync);
+        sync();
+      });
+
+      fileInput.addEventListener('change', () => {
+        const files = Array.from(fileInput.files || []);
+        fileLabel.textContent = files.length
+          ? `已选择 ${files.length} 个文件：${files.slice(0, 3).map((item) => item.name).join('、')}${files.length > 3 ? ' ...' : ''}`
+          : '支持图片和视频，识别结果将自动保存到输出目录。';
+      });
+
+      compareFilesInput?.addEventListener('change', () => {
+        const files = Array.from(compareFilesInput.files || []);
+        compareFileLabelNode.textContent = files.length
+          ? `已选择 ${files.length} 张图片：${files.slice(0, 3).map((item) => item.name).join('、')}${files.length > 3 ? ' ...' : ''}`
+          : '支持一次上传多张图片，仅用于双模型对比识别。';
+      });
+
+      function setStatus(message, type = '') {
+        statusNode.textContent = message;
+        statusNode.className = `status-banner${type ? ` ${type}` : ''}`;
+      }
+
+      function extractErrorMessage(detail, fallback = '操作失败') {
+        if (!detail) return fallback;
+        if (typeof detail === 'string') return detail;
+        if (Array.isArray(detail)) {
+          return detail.map((item) => {
+            if (typeof item === 'string') return item;
+            if (item?.msg && Array.isArray(item?.loc)) return `${item.loc.join(' → ')}：${item.msg}`;
+            if (item?.msg) return item.msg;
+            try {
+              return JSON.stringify(item, null, 2);
+            } catch {
+              return String(item);
+            }
+          }).join('；');
+        }
+        if (typeof detail === 'object') {
+          if (typeof detail.message === 'string') return detail.message;
+          if (typeof detail.detail === 'string') return detail.detail;
+          try {
+            return JSON.stringify(detail, null, 2);
+          } catch {
+            return String(detail);
+          }
+        }
+        return String(detail);
+      }
+
+      function parseJsonResponse(raw, fallback = '服务返回了非 JSON 响应') {
+        if (!raw) return {};
+        try {
+          return JSON.parse(raw);
+        } catch {
+          throw new Error(`${fallback}：${raw.slice(0, 200)}`);
+        }
+      }
+
+      function resetPreview() {
+        imageNode.style.display = 'none';
+        imageNode.removeAttribute('src');
+        videoNode.style.display = 'none';
+        videoNode.pause();
+        videoNode.removeAttribute('src');
+        videoNode.load();
+        emptyResultNode.style.display = 'block';
+        currentBatchResults = [];
+        currentBatchIndex = 0;
+        updateBatchNavigator();
+      }
+
+      function updateBatchNavigator() {
+        const batchNavNode = document.getElementById('batch-nav');
+        const resultCounterNode = document.getElementById('result-counter');
+        const prevButton = document.getElementById('prev-result-btn');
+        const nextButton = document.getElementById('next-result-btn');
+
+        if (!batchNavNode || !resultCounterNode || !prevButton || !nextButton) {
+          return;
+        }
+
+        const total = currentBatchResults.length;
+        if (total <= 1) {
+          batchNavNode.classList.add('hidden');
+          resultCounterNode.textContent = total === 1 ? '第 1 / 1 项' : '第 0 / 0 项';
+          prevButton.disabled = true;
+          nextButton.disabled = true;
+          return;
+        }
+
+        batchNavNode.classList.remove('hidden');
+        resultCounterNode.textContent = `第 ${currentBatchIndex + 1} / ${total} 项`;
+        prevButton.disabled = currentBatchIndex <= 0;
+        nextButton.disabled = currentBatchIndex >= total - 1;
+      }
+
+      function renderBatchItem(index) {
+        if (!currentBatchResults.length) {
+          return;
+        }
+        const item = currentBatchResults[index];
+        if (!item) {
+          return;
+        }
+
+        setStatus(`当前查看：${item.source_name || `第 ${index + 1} 项`}，耗时 ${item.cost_ms} ms，识别 ${item.detections.length} 项结果。`, 'success');
+        imageNode.style.display = 'none';
+        videoNode.style.display = 'none';
+        emptyResultNode.style.display = 'none';
+
+        if (item.type === 'image') {
+          imageNode.src = `${item.result_url}?t=${Date.now()}`;
+          imageNode.style.display = 'block';
+        } else if (item.type === 'video') {
+          videoNode.src = `${item.result_url}?t=${Date.now()}`;
+          videoNode.style.display = 'block';
+        }
+
+        jsonNode.textContent = JSON.stringify(item, null, 2);
+        renderKnowledge(item.herb_info);
+        updateBatchNavigator();
+      }
+
+      function renderCompareResultColumn(container, items, modelKey) {
+        if (!container) {
+          return;
+        }
+        if (!Array.isArray(items) || !items.length) {
+          container.innerHTML = '<div class="empty-state">暂无对比结果。</div>';
+          return;
+        }
+
+        container.innerHTML = items.map((item) => {
+          const result = item[modelKey];
+          return `
+            <article class="compare-card">
+              <h4>${item.source_name}</h4>
+              <div class="result-frame" style="min-height: 260px; margin-top: 12px;">
+                <img class="preview" style="display:block;" src="${result.result_url}?t=${Date.now()}" alt="${item.source_name} ${result.model_name}" />
+              </div>
+              <div class="compare-metrics">
+                <span>检测目标数：${result.detection_count}</span>
+                <span>平均置信度：${result.avg_confidence}</span>
+                <span>推理时间：${result.inference_ms} ms</span>
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      function renderCompareAnalysis(analysis) {
+        if (!compareAnalysisNode) {
+          return;
+        }
+        if (!analysis) {
+          compareAnalysisNode.innerHTML = '<p class="knowledge-text">尚未生成模型对比分析。</p>';
+          return;
+        }
+
+        compareAnalysisNode.innerHTML = `
+          <p class="knowledge-text">${analysis.summary || '暂无整体分析。'}</p>
+          <div class="compare-metrics">
+            <span>模型 A 优势：${Array.isArray(analysis.strengths_model_a) ? analysis.strengths_model_a.length : 0} 条</span>
+            <span>模型 B 优势：${Array.isArray(analysis.strengths_model_b) ? analysis.strengths_model_b.length : 0} 条</span>
+            <span>改进建议：${Array.isArray(analysis.recommendations) ? analysis.recommendations.length : 0} 条</span>
+          </div>
+          <div class="knowledge-item" style="margin-top:12px;">
+            <h4>模型 A 优势</h4>
+            <ul class="knowledge-list">${Array.isArray(analysis.strengths_model_a) && analysis.strengths_model_a.length ? analysis.strengths_model_a.map((item) => `<li>${item}</li>`).join('') : '<li class="subdued">暂无。</li>'}</ul>
+          </div>
+          <div class="knowledge-item" style="margin-top:12px;">
+            <h4>模型 B 优势</h4>
+            <ul class="knowledge-list">${Array.isArray(analysis.strengths_model_b) && analysis.strengths_model_b.length ? analysis.strengths_model_b.map((item) => `<li>${item}</li>`).join('') : '<li class="subdued">暂无。</li>'}</ul>
+          </div>
+          <div class="knowledge-item" style="margin-top:12px;">
+            <h4>改进建议</h4>
+            <ul class="knowledge-list">${Array.isArray(analysis.recommendations) && analysis.recommendations.length ? analysis.recommendations.map((item) => `<li>${item}</li>`).join('') : '<li class="subdued">暂无。</li>'}</ul>
+          </div>
+        `;
+      }
+
+      async function loadAISettings() {
+        const response = await fetch('/api/settings/ai');
+        const raw = await response.text();
+        const payload = parseJsonResponse(raw, '加载 AI 配置失败');
+        if (!response.ok) {
+          throw new Error(extractErrorMessage(payload.detail, '加载 AI 配置失败'));
+        }
+
+        aiBaseUrlNode.value = payload.base_url || '';
+        aiModelNameNode.value = payload.model || '';
+        aiApiKeyNode.value = '';
+        aiApiKeyNode.placeholder = payload.api_key_configured
+          ? `已保存密钥：${payload.api_key_masked || '已配置'}`
+          : '请输入 AI API Key';
+        aiTimeoutSecondsNode.value = String(payload.timeout_seconds ?? 30);
+        aiSettingsStatusNode.textContent = payload.enabled
+          ? `已加载 AI 配置。当前密钥状态：${payload.api_key_masked || '已配置'}`
+          : 'AI 当前未启用，保存密钥后即可启用 AI 草药介绍与对比分析。';
+        aiSettingsStatusNode.className = `status-banner${payload.enabled ? ' success' : ''}`;
+      }
+
+      function formatUnixTimestamp(timestamp) {
+        const numeric = Number(timestamp);
+        if (!Number.isFinite(numeric) || numeric <= 0) {
+          return '未知时间';
+        }
+        return new Date(numeric * 1000).toLocaleString('zh-CN', { hour12: false });
+      }
+
+      async function loadCompareHistoryDetail(compareId) {
+        if (!compareId) {
+          return;
+        }
+        const response = await fetch(`/api/compare/history/${compareId}`);
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(extractErrorMessage(payload.detail, '加载模型对比历史详情失败'));
+        }
+
+        compareModelATitleNode.textContent = `结果窗口 A · ${payload.model_a?.model_name || '模型 A'}`;
+        compareModelBTitleNode.textContent = `结果窗口 B · ${payload.model_b?.model_name || '模型 B'}`;
+        renderCompareResultColumn(compareResultsANode, payload.items || [], 'model_a');
+        renderCompareResultColumn(compareResultsBNode, payload.items || [], 'model_b');
+        renderCompareAnalysis(payload.analysis);
+        compareStatusNode.textContent = `已加载历史记录：${payload.model_a?.model_name || '-'} vs ${payload.model_b?.model_name || '-'}，共 ${payload.image_count || 0} 张图片。`;
+        compareStatusNode.className = 'status-banner success';
+      }
+
+      function updateCompareHistoryNavigator() {
+        const counterNode = document.getElementById('compare-history-counter');
+        const prevButton = document.getElementById('compare-history-prev-btn');
+        const nextButton = document.getElementById('compare-history-next-btn');
+        const total = compareHistoryRecords.length;
+        if (counterNode) {
+          counterNode.textContent = total ? `第 ${compareHistoryIndex + 1} / ${total} 条` : '第 0 / 0 条';
+        }
+        if (prevButton) prevButton.disabled = compareHistoryIndex <= 0;
+        if (nextButton) nextButton.disabled = compareHistoryIndex >= total - 1;
+      }
+
+      function renderCompareHistoryCard() {
+        const stageNode = document.getElementById('compare-history-stage');
+        if (!stageNode) {
+          return;
+        }
+        if (!Array.isArray(compareHistoryRecords) || !compareHistoryRecords.length) {
+          stageNode.innerHTML = '<div class="empty-state">暂无历史记录。</div>';
+          updateCompareHistoryNavigator();
+          return;
+        }
+
+        const item = compareHistoryRecords[compareHistoryIndex];
+        stageNode.innerHTML = `
+          <article class="history-item active" data-compare-id="${item.compare_id || ''}">
+            <div class="history-item-head">
+              <div>
+                <h4 class="history-title">${item.model_a?.model_name || '-'} vs ${item.model_b?.model_name || '-'}</h4>
+                <div class="sub-desc">对比图片数：${item.image_count || 0}</div>
+                <div class="sub-desc">创建时间：${formatUnixTimestamp(item.created_at)}</div>
+              </div>
+              <span class="tag">可加载</span>
+            </div>
+            <div class="history-actions">
+              <div class="history-id">记录 ID：${item.compare_id || '-'}</div>
+              <button class="compact-btn primary" type="button" data-compare-load="${item.compare_id || ''}">加载详情</button>
+            </div>
+          </article>
+        `;
+
+        const cardNode = stageNode.querySelector('.history-item');
+        const buttonNode = stageNode.querySelector('[data-compare-load]');
+        const loadCurrent = async () => {
+          try {
+            await loadCompareHistoryDetail(item.compare_id);
+          } catch (error) {
+            compareStatusNode.textContent = error.message;
+            compareStatusNode.className = 'status-banner error';
+          }
+        };
+        cardNode?.addEventListener('click', loadCurrent);
+        buttonNode?.addEventListener('click', async (event) => {
+          event.stopPropagation();
+          await loadCurrent();
+        });
+
+        updateCompareHistoryNavigator();
+      }
+
+      function renderCompareHistory(history) {
+        if (!compareHistoryNode) {
+          return;
+        }
+        compareHistoryRecords = Array.isArray(history) ? history : [];
+        if (compareHistoryIndex >= compareHistoryRecords.length) {
+          compareHistoryIndex = Math.max(compareHistoryRecords.length - 1, 0);
+        }
+        renderCompareHistoryCard();
+      }
+
+      function resetKnowledge() {
+        knowledgeHerbNameNode.textContent = '等待识别中草药';
+        knowledgeItemsNode.innerHTML = `
+          <div class="knowledge-item">
+            <p class="knowledge-text">识别出中草药名称后，这里会显示基本描述。</p>
+            <ul class="knowledge-list"><li class="subdued">药用功效将在识别完成后显示。</li></ul>
+          </div>
+        `;
+        knowledgeNotesNode.textContent = '尚未触发 AI 草药知识生成。';
+      }
+
+      function openAuthModal(force = false) {
+        mustChangePassword = force || mustChangePassword;
+        authModalNode.classList.remove('hidden');
+        closeAuthModalButton.style.display = mustChangePassword ? 'none' : '';
+        authStatusNode.textContent = mustChangePassword
+          ? '出于安全要求，首次登录后必须先修改账户密码，修改完成前将限制访问其他功能。'
+          : '请输入当前密码，并设置新的账户名与密码。';
+        authStatusNode.className = 'auth-status';
+      }
+
+      function closeAuthModal() {
+        if (mustChangePassword) {
+          authStatusNode.textContent = '请先完成密码修改后再继续使用系统。';
+          authStatusNode.className = 'auth-status error';
+          return;
+        }
+        authModalNode.classList.add('hidden');
+        authCurrentPasswordNode.value = '';
+        authNewPasswordNode.value = '';
+      }
+
+      function renderKnowledge(info) {
+        if (!info) {
+          resetKnowledge();
+          return;
+        }
+        const items = Array.isArray(info.items) ? info.items : [];
+        knowledgeHerbNameNode.textContent = items.length > 1 ? '多种中草药识别结果' : (items[0]?.herb_name || '未识别出中草药名称');
+        knowledgeItemsNode.innerHTML = items.length
+          ? items.map((item, index) => {
+              const bodyHtml = `
+                <p class="knowledge-text">${item.basic_description || '暂无基本描述。'}</p>
+                <ul class="knowledge-list">
+                  ${Array.isArray(item.medicinal_effects) && item.medicinal_effects.length
+                    ? item.medicinal_effects.map((effect) => `<li>${effect}</li>`).join('')
+                    : '<li class="subdued">暂无药用功效信息。</li>'}
+                </ul>
+                ${item.notes ? `<div class="helper-text">${item.notes}</div>` : ''}
+              `;
+
+              if (items.length === 1) {
+                return `
+                  <div class="knowledge-item">
+                    <h4>${item.herb_name || '未命名草药'}</h4>
+                    <div class="knowledge-meta">检测框数量：${item.count ?? 1} ｜ 最高置信度：${item.max_confidence ?? 0}</div>
+                    ${bodyHtml}
+                  </div>
+                `;
+              }
+
+              return `
+                <details class="knowledge-item knowledge-details" ${index === 0 ? 'open' : ''}>
+                  <summary class="knowledge-summary">
+                    <div>
+                      <h4>${item.herb_name || '未命名草药'}</h4>
+                      <div class="knowledge-meta">检测框数量：${item.count ?? 1} ｜ 最高置信度：${item.max_confidence ?? 0}</div>
+                    </div>
+                    <span class="knowledge-toggle">${index === 0 ? '已展开' : '点击展开'}</span>
+                  </summary>
+                  <div class="knowledge-body">${bodyHtml}</div>
+                </details>
+              `;
+            }).join('')
+          : `
+              <div class="knowledge-item">
+                <p class="knowledge-text">暂无可展示的草药知识。</p>
+              </div>
+            `;
+        knowledgeNotesNode.textContent = info.notes || (info.status === 'success' ? 'AI 已按草药种类归一化输出介绍。' : '');
+      }
+
+      function setCameraStream(cameraId) {
+        if (!cameraId) {
+          cameraStreamImageNode.style.display = 'none';
+          cameraStreamImageNode.removeAttribute('src');
+          cameraEmptyNode.style.display = 'block';
+          return;
+        }
+        cameraStreamImageNode.src = `/api/stream/${cameraId}?t=${Date.now()}`;
+        cameraStreamImageNode.style.display = 'block';
+        cameraEmptyNode.style.display = 'none';
+      }
+
+      function renderLogs() {
+        const keyword = logSearchInputNode.value.trim().toLowerCase();
+        const level = logLevelFilterNode.value;
+        const sort = logSortFilterNode.value;
+        let logs = [...latestLogs];
+
+        if (level !== 'all') logs = logs.filter((item) => (item.level || '').toUpperCase() === level);
+        if (keyword) logs = logs.filter((item) => JSON.stringify(item).toLowerCase().includes(keyword));
+        if (sort === 'oldest') logs.reverse();
+
+        logsNode.textContent = JSON.stringify({ logs }, null, 2);
+        logsListNode.innerHTML = '';
+        logsEmptyNode.classList.toggle('hidden', logs.length > 0);
+
+        logs.forEach((item) => {
+          const levelName = (item.level || 'INFO').toUpperCase();
+          const levelClass = levelName.toLowerCase();
+          const sourceName = item.source || 'runtime';
+          const row = document.createElement('article');
+          row.className = `log-item ${levelClass}`;
+          row.innerHTML = `
+            <div class="log-head">
+              <div class="log-tags">
+                <span class="log-tag level-${levelClass}">${levelName}</span>
+                <span class="log-tag">${sourceName}</span>
+              </div>
+              <span class="log-time">${item.time || '运行时日志'}</span>
+            </div>
+            <div class="log-source">来源：${sourceName}</div>
+            <div class="log-message">${item.message || ''}</div>
+          `;
+          logsListNode.appendChild(row);
+        });
+      }
+
+      async function loadStatus() {
+        const response = await fetch('/api/status');
+        const payload = await response.json();
+        systemStatusNode.textContent = payload.loaded ? '运行中' : '待加载';
+      }
+
+      async function loadAuthStatus() {
+        const response = await fetch('/api/auth/status');
+        const payload = await response.json();
+        if (!payload.authenticated) {
+          window.location.href = '/login';
+          return;
+        }
+        mustChangePassword = Boolean(payload.must_change_password);
+        currentUsernameNode.textContent = payload.username || 'admin';
+        userAvatarNode.textContent = (payload.username || 'A').charAt(0).toUpperCase();
+        authUsernameNode.value = payload.username || 'admin';
+        if (mustChangePassword) {
+          openAuthModal(true);
+          setStatus('首次登录后必须先完成密码修改，修改完成前系统功能已受限。', 'error');
+        } else {
+          closeAuthModalButton.style.display = '';
+        }
+        return payload;
+      }
+
+      async function loadModel() {
+        const response = await fetch('/api/model');
+        const payload = await response.json();
+        modelNameNode.textContent = payload.model_name || '未加载';
+      }
+
+      async function loadModels() {
+        const response = await fetch('/api/models');
+        const payload = await response.json();
+        const models = Array.isArray(payload.models) ? payload.models : [];
+        modelCountNode.textContent = String(models.length);
+        modelSelectNode.innerHTML = '';
+        if (!models.length) {
+          const option = document.createElement('option');
+          option.value = '';
+          option.textContent = '暂无可选模型';
+          modelSelectNode.appendChild(option);
+          return;
+        }
+        models.forEach((item) => {
+          const option = document.createElement('option');
+          option.value = item.model_name;
+          option.textContent = item.is_current ? `${item.model_name}（当前）` : item.model_name;
+          if (item.is_current) option.selected = true;
+          modelSelectNode.appendChild(option);
+        });
+
+        if (compareModelANode && compareModelBNode) {
+          compareModelANode.innerHTML = '';
+          compareModelBNode.innerHTML = '';
+          models.forEach((item, index) => {
+            const optionA = document.createElement('option');
+            optionA.value = item.model_name;
+            optionA.textContent = item.model_name;
+            if (item.is_current) optionA.selected = true;
+            compareModelANode.appendChild(optionA);
+
+            const optionB = document.createElement('option');
+            optionB.value = item.model_name;
+            optionB.textContent = item.model_name;
+            if (!item.is_current && index === 0) optionB.selected = true;
+            compareModelBNode.appendChild(optionB);
+          });
+        }
+      }
+
+      async function loadCompareHistory() {
+        const response = await fetch('/api/compare/history');
+        const payload = await response.json();
+        renderCompareHistory(payload.history || []);
+      }
+
+      async function loadLogs() {
+        const response = await fetch('/api/logs?lines=200');
+        const payload = await response.json();
+        latestLogs = Array.isArray(payload.logs) ? payload.logs : [];
+        renderLogs();
+      }
+
+      async function loadWatchStatus() {
+        const response = await fetch('/api/watch/status');
+        const payload = await response.json();
+        watchDirValueNode.textContent = payload.watch_dir || './watch';
+        watchStatusNode.textContent = payload.enabled ? `运行中 · 已处理 ${payload.processed_count} 个文件` : '未启动';
+        watchStatusNode.style.color = payload.enabled ? 'var(--success)' : 'inherit';
+        toggleWatchButton.textContent = payload.enabled ? '停止监控' : '启动监控';
+        watchCountNode.textContent = String(payload.processed_count || 0);
+      }
+
+      async function loadCameraStatus(cameraId) {
+        if (!cameraId) {
+          cameraCurrentNameNode.textContent = '未选择';
+          cameraRuntimeStatusNode.textContent = '未启动';
+          cameraDetectionsNode.textContent = '暂无数据。';
+          return;
+        }
+        const response = await fetch(`/api/cameras/${cameraId}/status`);
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.detail || '获取摄像机状态失败');
+        cameraCurrentNameNode.textContent = payload.name || cameraId;
+        cameraRuntimeStatusNode.textContent = `${payload.status} · FPS ${payload.fps ?? 0}`;
+        cameraDetectionsNode.textContent = JSON.stringify(payload.detections || [], null, 2);
+        if (payload.status === 'running' || payload.status === 'reconnecting') setCameraStream(cameraId);
+      }
+
+      function buildCameraPayload() {
+        const cameraType = cameraTypeNode.value;
+        const cameraName = cameraNameNode.value.trim() || `camera_${Date.now()}`;
+        const cameraId = cameraName.replace(/\s+/g, '_').toLowerCase();
+        return {
+          camera_id: cameraId,
+          name: cameraName,
+          type: cameraType,
+          url: cameraType === 'rtsp' ? cameraUrlNode.value.trim() : null,
+          host: cameraType === 'onvif' ? cameraHostNode.value.trim() : null,
+          port: Number(cameraPortNode.value || 80),
+          username: cameraUsernameNode.value.trim(),
+          password: cameraPasswordNode.value,
+          profile_token: cameraProfileTokenNode.value.trim() || null,
+          enabled: false,
+        };
+      }
+
+      async function refreshDashboard() {
+        const authPayload = await loadAuthStatus();
+        if (!authPayload || authPayload.must_change_password) {
+          return;
+        }
+        await Promise.all([loadStatus(), loadModel(), loadModels(), loadWatchStatus(), loadLogs(), loadAISettings()]);
+      }
+
+      dashboardRefreshButton.addEventListener('click', refreshDashboard);
+      themeToggleButton.addEventListener('click', () => {
+        const nextTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('hv-theme', nextTheme);
+        applyTheme(nextTheme);
+      });
+      sidebarToggleButton.addEventListener('click', () => {
+        const collapsed = !appShellNode.classList.contains('sidebar-collapsed');
+        localStorage.setItem('hv-sidebar-collapsed', collapsed ? '1' : '0');
+        applySidebarState(collapsed);
+      });
+      goMonitorButton.addEventListener('click', () => {
+        document.querySelector('.nav-link[data-view="monitor-view"]').click();
+      });
+      goDashboardButton.addEventListener('click', () => {
+        document.querySelector('.nav-link[data-view="dashboard-view"]').click();
+      });
+      openSettingsButton.addEventListener('click', () => {
+        document.querySelector('.nav-link[data-view="settings-view"]').click();
+      });
+
+      refreshStatusButton.addEventListener('click', async () => {
+        await Promise.all([loadStatus(), loadWatchStatus()]);
+      });
+      refreshModelButton.addEventListener('click', async () => {
+        await Promise.all([loadModel(), loadModels(), loadStatus(), loadLogs()]);
+      });
+      refreshLogsButton.addEventListener('click', loadLogs);
+      refreshLogsSideButton.addEventListener('click', loadLogs);
+      refreshModelsButton.addEventListener('click', async () => {
+        await Promise.all([loadModels(), loadModel()]);
+      });
+      document.getElementById('prev-result-btn')?.addEventListener('click', () => {
+        if (currentBatchIndex > 0) {
+          currentBatchIndex -= 1;
+          renderBatchItem(currentBatchIndex);
+        }
+      });
+      document.getElementById('next-result-btn')?.addEventListener('click', () => {
+        if (currentBatchIndex < currentBatchResults.length - 1) {
+          currentBatchIndex += 1;
+          renderBatchItem(currentBatchIndex);
+        }
+      });
+      logLevelFilterNode.addEventListener('change', renderLogs);
+      logSortFilterNode.addEventListener('change', renderLogs);
+      logSearchInputNode.addEventListener('input', renderLogs);
+      resetLogsFilterButton.addEventListener('click', () => {
+        logLevelFilterNode.value = 'all';
+        logSortFilterNode.value = 'newest';
+        logSearchInputNode.value = '';
+        renderLogs();
+      });
+      openAccountSettingsButton.addEventListener('click', openAuthModal);
+      closeAuthModalButton.addEventListener('click', closeAuthModal);
+      authModalNode.addEventListener('click', (event) => {
+        if (event.target === authModalNode) {
+          closeAuthModal();
+        }
+      });
+
+      authFormNode.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+          const response = await fetch('/api/auth/change-credentials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              current_password: authCurrentPasswordNode.value,
+              new_username: authUsernameNode.value.trim(),
+              new_password: authNewPasswordNode.value,
+            }),
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.detail || '修改账户密码失败');
+          }
+          authStatusNode.textContent = '账户密码已更新。';
+          authStatusNode.className = 'auth-status success';
+          authCurrentPasswordNode.value = '';
+          authNewPasswordNode.value = '';
+          mustChangePassword = false;
+          closeAuthModalButton.style.display = '';
+          authModalNode.classList.add('hidden');
+          await loadAuthStatus();
+          setStatus('账户密码已更新。', 'success');
+          await Promise.all([loadStatus(), loadModel(), loadModels(), loadWatchStatus(), loadLogs(), loadAISettings()]);
+        } catch (error) {
+          authStatusNode.textContent = error.message;
+          authStatusNode.className = 'auth-status error';
+        }
+      });
+
+      logoutButton.addEventListener('click', async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        window.location.href = '/login';
+      });
+
+      compareHistoryButton?.addEventListener('click', loadCompareHistory);
+      saveAiSettingsButton?.addEventListener('click', async () => {
+        try {
+          saveAiSettingsButton.disabled = true;
+          const response = await fetch('/api/settings/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              base_url: aiBaseUrlNode.value.trim(),
+              model: aiModelNameNode.value.trim(),
+              api_key: aiApiKeyNode.value.trim(),
+              timeout_seconds: Number(aiTimeoutSecondsNode.value || 30),
+            }),
+          });
+          const raw = await response.text();
+          const payload = parseJsonResponse(raw, '保存 AI 配置失败');
+          if (!response.ok) {
+            throw new Error(extractErrorMessage(payload.detail, '保存 AI 配置失败'));
+          }
+          aiApiKeyNode.value = '';
+          aiApiKeyNode.placeholder = payload.api_key_configured
+            ? `已保存密钥：${payload.api_key_masked || '已配置'}`
+            : '请输入 AI API Key';
+          aiSettingsStatusNode.textContent = payload.enabled
+            ? `AI 配置已保存并启用，当前密钥状态：${payload.api_key_masked || '已配置'}`
+            : 'AI 配置已保存，但当前未启用（未填写密钥）。';
+          aiSettingsStatusNode.className = `status-banner${payload.enabled ? ' success' : ''}`;
+        } catch (error) {
+          aiSettingsStatusNode.textContent = error.message;
+          aiSettingsStatusNode.className = 'status-banner error';
+        } finally {
+          saveAiSettingsButton.disabled = false;
+        }
+      });
+      resetAiSettingsButton?.addEventListener('click', async () => {
+        try {
+          await loadAISettings();
+        } catch (error) {
+          aiSettingsStatusNode.textContent = error.message;
+          aiSettingsStatusNode.className = 'status-banner error';
+        }
+      });
+      document.getElementById('compare-history-prev-btn')?.addEventListener('click', () => {
+        if (compareHistoryIndex > 0) {
+          compareHistoryIndex -= 1;
+          renderCompareHistoryCard();
+        }
+      });
+      document.getElementById('compare-history-next-btn')?.addEventListener('click', () => {
+        if (compareHistoryIndex < compareHistoryRecords.length - 1) {
+          compareHistoryIndex += 1;
+          renderCompareHistoryCard();
+        }
+      });
+
+      uploadModelButton.addEventListener('click', async () => {
+        const file = modelFileInput.files?.[0];
+        if (!file) {
+          setStatus('请先选择要上传的模型文件。', 'error');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('activate', 'true');
+        try {
+          uploadModelButton.disabled = true;
+          const response = await fetch('/api/models/upload', { method: 'POST', body: formData });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || '模型上传失败');
+          setStatus(`模型 ${payload.model_name} 已上传并启用。`, 'success');
+          modelFileInput.value = '';
+          await Promise.all([loadModel(), loadModels(), loadLogs()]);
+        } catch (error) {
+          setStatus(error.message, 'error');
+        } finally {
+          uploadModelButton.disabled = false;
+        }
+      });
+
+      switchModelButton.addEventListener('click', async () => {
+        const modelName = modelSelectNode.value;
+        if (!modelName) {
+          setStatus('当前没有可切换的模型。', 'error');
+          return;
+        }
+        try {
+          switchModelButton.disabled = true;
+          const response = await fetch('/api/models/select', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model_name: modelName }),
+          });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || '模型切换失败');
+          setStatus(`已切换到模型 ${payload.selected}。`, 'success');
+          await Promise.all([loadModel(), loadModels(), loadLogs()]);
+        } catch (error) {
+          setStatus(error.message, 'error');
+        } finally {
+          switchModelButton.disabled = false;
+        }
+      });
+
+      toggleWatchButton.addEventListener('click', async () => {
+        try {
+          const statusResponse = await fetch('/api/watch/status');
+          const current = await statusResponse.json();
+          const endpoint = current.enabled ? '/api/watch/stop' : '/api/watch/start';
+          const body = current.enabled ? undefined : JSON.stringify({ watch_dir: './watch' });
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: body ? { 'Content-Type': 'application/json' } : undefined,
+            body,
+          });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || '目录监控操作失败');
+          await Promise.all([loadWatchStatus(), loadLogs()]);
+        } catch (error) {
+          setStatus(error.message, 'error');
+        }
+      });
+
+      resolveOnvifButton.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/onvif/resolve', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              host: cameraHostNode.value.trim(),
+              port: Number(cameraPortNode.value || 80),
+              username: cameraUsernameNode.value.trim(),
+              password: cameraPasswordNode.value,
+              profile_token: cameraProfileTokenNode.value.trim() || null,
+            }),
+          });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || 'ONVIF 解析失败');
+          cameraUrlNode.value = payload.rtsp_url || '';
+          cameraTypeNode.value = 'onvif';
+          setStatus(`ONVIF 解析成功：${payload.model || payload.manufacturer || '设备已连接'}。为避免泄露凭据，返回结果中不再回显带账号密码的 RTSP 地址。`, 'success');
+        } catch (error) {
+          setStatus(error.message, 'error');
+        }
+      });
+
+      saveCameraButton.addEventListener('click', async () => {
+        try {
+          const payload = buildCameraPayload();
+          const response = await fetch('/api/cameras', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.detail || '保存摄像机失败');
+          currentCameraId = payload.camera_id;
+          cameraCurrentNameNode.textContent = payload.name;
+          setStatus(`摄像机 ${payload.name} 已保存。`, 'success');
+        } catch (error) {
+          setStatus(error.message, 'error');
+        }
+      });
+
+      startCameraButton.addEventListener('click', async () => {
+        try {
+          if (!currentCameraId) {
+            await saveCameraButton.click();
+          }
+          if (!currentCameraId) throw new Error('请先保存摄像机配置');
+          const response = await fetch(`/api/cameras/${currentCameraId}/start`, { method: 'POST' });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || '启动监控失败');
+          setStatus(`摄像机 ${payload.name || currentCameraId} 已启动。`, 'success');
+          await loadCameraStatus(currentCameraId);
+        } catch (error) {
+          setStatus(error.message, 'error');
+        }
+      });
+
+      stopCameraButton.addEventListener('click', async () => {
+        try {
+          if (!currentCameraId) throw new Error('当前没有已保存的摄像机');
+          const response = await fetch(`/api/cameras/${currentCameraId}/stop`, { method: 'POST' });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(payload.detail || '停止监控失败');
+          cameraRuntimeStatusNode.textContent = payload.status;
+          cameraDetectionsNode.textContent = '暂无数据。';
+          setCameraStream(null);
+          setStatus(`摄像机 ${payload.name || currentCameraId} 已停止。`, 'success');
+        } catch (error) {
+          setStatus(error.message, 'error');
+        }
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const selectedFiles = Array.from(fileInput.files || []);
+        if (!selectedFiles.length) {
+          setStatus('请先选择图片或视频。', 'error');
+          return;
+        }
+
+        const isBatchImageMode = selectedFiles.length > 1;
+        if (isBatchImageMode && selectedFiles.some((file) => !/\.(jpg|jpeg|png|bmp|webp)$/i.test(file.name))) {
+          setStatus('多张文件同时识别时，仅支持图片格式（jpg、jpeg、png、bmp、webp）。', 'error');
+          return;
+        }
+
+        const formData = new FormData();
+        if (isBatchImageMode) {
+          selectedFiles.forEach((file) => formData.append('files', file));
+        } else {
+          formData.append('file', selectedFiles[0]);
+        }
+        formData.append('device', 'cpu');
+        formData.append('conf', document.getElementById('conf').value);
+        formData.append('iou', document.getElementById('iou').value);
+        formData.append('imgsz', document.getElementById('imgsz').value);
+
+        submitButton.disabled = true;
+        setStatus('检测进行中，请稍候...');
+        resetPreview();
+        resetKnowledge();
+        jsonNode.textContent = '处理中...';
+        try {
+          const endpoint = selectedFiles.length > 1 ? '/api/detect/upload-batch' : '/api/detect/upload';
+          const response = await fetch(endpoint, { method: 'POST', body: formData });
+          const payload = await response.json();
+          if (!response.ok) throw new Error(extractErrorMessage(payload.detail, '检测失败'));
+          if (payload.type === 'image_batch') {
+            currentBatchResults = payload.items || [];
+            currentBatchIndex = 0;
+            if (currentBatchResults.length) {
+              renderBatchItem(0);
+            }
+            setStatus(`批量检测完成，共处理 ${payload.count} 张图片。`, 'success');
+          } else {
+            currentBatchResults = [];
+            currentBatchIndex = 0;
+            updateBatchNavigator();
+            setStatus(`检测成功，耗时 ${payload.cost_ms} ms，共识别 ${payload.detections.length} 项结果。`, 'success');
+            if (payload.type === 'image') {
+              imageNode.src = `${payload.result_url}?t=${Date.now()}`;
+              imageNode.style.display = 'block';
+              emptyResultNode.style.display = 'none';
+            } else if (payload.type === 'video') {
+              videoNode.src = `${payload.result_url}?t=${Date.now()}`;
+              videoNode.style.display = 'block';
+              emptyResultNode.style.display = 'none';
+            }
+            jsonNode.textContent = JSON.stringify(payload, null, 2);
+            renderKnowledge(payload.herb_info);
+          }
+          await Promise.all([loadLogs(), loadStatus()]);
+        } catch (error) {
+          setStatus(error.message, 'error');
+          jsonNode.textContent = JSON.stringify({ error: error.message }, null, 2);
+          resetKnowledge();
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      compareFormNode?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const files = Array.from(compareFilesInput.files || []);
+        if (!files.length) {
+          compareStatusNode.textContent = '请先选择要对比的图片。';
+          compareStatusNode.className = 'status-banner error';
+          return;
+        }
+        if (!compareModelANode.value || !compareModelBNode.value) {
+          compareStatusNode.textContent = '请选择模型 A 和模型 B。';
+          compareStatusNode.className = 'status-banner error';
+          return;
+        }
+        if (compareModelANode.value === compareModelBNode.value) {
+          compareStatusNode.textContent = '模型 A 和模型 B 不能相同。';
+          compareStatusNode.className = 'status-banner error';
+          return;
+        }
+
+        const formData = new FormData();
+        files.forEach((file) => formData.append('files', file));
+        formData.append('model_a', compareModelANode.value);
+        formData.append('model_b', compareModelBNode.value);
+        formData.append('conf', document.getElementById('conf').value);
+        formData.append('iou', document.getElementById('iou').value);
+        formData.append('imgsz', document.getElementById('imgsz').value);
+
+        try {
+          compareSubmitButton.disabled = true;
+          compareStatusNode.textContent = '双模型对比识别进行中，请稍候...';
+          compareStatusNode.className = 'status-banner';
+
+          const response = await fetch('/api/compare/models', {
+            method: 'POST',
+            body: formData,
+          });
+          const payload = await response.json();
+          if (!response.ok) {
+            throw new Error(payload.detail || '模型对比失败');
+          }
+
+          compareModelATitleNode.textContent = `结果窗口 A · ${payload.model_a?.model_name || compareModelANode.value}`;
+          compareModelBTitleNode.textContent = `结果窗口 B · ${payload.model_b?.model_name || compareModelBNode.value}`;
+          renderCompareResultColumn(compareResultsANode, payload.items || [], 'model_a');
+          renderCompareResultColumn(compareResultsBNode, payload.items || [], 'model_b');
+          renderCompareAnalysis(payload.analysis);
+          await loadCompareHistory();
+          compareHistoryIndex = 0;
+          renderCompareHistoryCard();
+
+          compareStatusNode.textContent = `对比完成，共处理 ${payload.image_count || 0} 张图片。`;
+          compareStatusNode.className = 'status-banner success';
+        } catch (error) {
+          compareStatusNode.textContent = error.message;
+          compareStatusNode.className = 'status-banner error';
+        } finally {
+          compareSubmitButton.disabled = false;
+        }
+      });
+
+      resetPreview();
+      resetKnowledge();
+      initializeTheme();
+      initializeSidebar();
+      refreshDashboard().then(async () => {
+        if (!mustChangePassword) {
+          await loadCompareHistory();
+        }
+      }).catch((error) => {
+        setStatus(`初始化失败：${error.message}`, 'error');
+      });
+    </script>
+  </body>
+</html>

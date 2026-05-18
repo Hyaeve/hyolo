@@ -1,0 +1,48 @@
+services:
+  yolo-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: yolo_cpu_detection
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    environment:
+      APP_CONFIG_FILE: /app/config/config.yaml
+      MODEL_PATH: /app/models/best.pt
+      DEVICE: cpu
+      MODEL_IMGSZ: ${MODEL_IMGSZ:-512}
+      ALLOW_MODEL_UPLOAD: ${ALLOW_MODEL_UPLOAD:-false}
+      ALLOW_UNSAFE_MODEL_UPLOADS: ${ALLOW_UNSAFE_MODEL_UPLOADS:-false}
+      CPU_THREADS: ${CPU_THREADS:-2}
+      MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-256}
+      MAX_BATCH_FILES: ${MAX_BATCH_FILES:-10}
+      CAMERA_DEFAULT_FPS_LIMIT: ${CAMERA_DEFAULT_FPS_LIMIT:-6}
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-30}
+      OMP_NUM_THREADS: ${OMP_NUM_THREADS:-2}
+      OPENBLAS_NUM_THREADS: ${OPENBLAS_NUM_THREADS:-2}
+      MKL_NUM_THREADS: ${MKL_NUM_THREADS:-2}
+      NUMEXPR_NUM_THREADS: ${NUMEXPR_NUM_THREADS:-2}
+      MALLOC_ARENA_MAX: ${MALLOC_ARENA_MAX:-2}
+      AUTH_DEFAULT_USERNAME: ${AUTH_DEFAULT_USERNAME:-admin}
+      AUTH_DEFAULT_PASSWORD: ${AUTH_DEFAULT_PASSWORD:-}
+      AUTH_SESSION_TTL_MINUTES: ${AUTH_SESSION_TTL_MINUTES:-1440}
+      AUTH_MIN_PASSWORD_LENGTH: ${AUTH_MIN_PASSWORD_LENGTH:-8}
+      AUTH_MAX_LOGIN_FAILURES: ${AUTH_MAX_LOGIN_FAILURES:-5}
+      AUTH_LOCKOUT_MINUTES: ${AUTH_LOCKOUT_MINUTES:-15}
+      TZ: Asia/Shanghai
+    shm_size: ${APP_SHM_SIZE:-256m}
+    mem_limit: ${APP_MEM_LIMIT:-4g}
+    cpus: ${APP_CPUS:-2.0}
+    pids_limit: ${APP_PIDS_LIMIT:-512}
+    volumes:
+      - ./models:/app/models
+      - ./uploads:/app/uploads
+      - ./outputs:/app/outputs
+      - ./watch:/app/watch
+      - ./logs:/app/logs
+      - ./config:/app/config
+    restart: unless-stopped
